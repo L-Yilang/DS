@@ -36,7 +36,7 @@ _TRACE_HEADER = [
 ]
 
 _DESTROY_NAMES = ["random", "lateness", "worst_distance", "related"]
-_REPAIR_NAMES = ["greedy", "urgent", "weight", "energy_safe"]
+_REPAIR_NAMES = ["greedy", "urgent", "weight", "energy_safe", "regret_k"]
 
 
 @dataclass
@@ -87,6 +87,9 @@ class EnergyAwareALNSStrategy(SchedulingStrategy):
     # ── destroy quantity ────────────────────────────────────────────
     destroy_fraction_min: float = 0.10
     destroy_fraction_max: float = 0.40
+
+    # ── regret-k ─────────────────────────────────────────────────────
+    regret_k: int = 3
 
     # ══════════════════════════════════════════════════════════════════
     #  Ablation study switches
@@ -697,6 +700,16 @@ class EnergyAwareALNSStrategy(SchedulingStrategy):
             ops.append(("related", self._destroy_related))
         return ops
 
+    def _build_repair_ops(self) -> List[Tuple[str, Callable]]:
+        """构建修复算子列表（可通过子类覆盖调整算子组合）。"""
+        return [
+            ("greedy", self._repair_greedy),
+            ("urgent", self._repair_urgent),
+            ("weight", self._repair_weight),
+            ("energy_safe", self._repair_energy_safe),
+            ("regret_k", self._repair_regret_k),
+        ]
+
     def _destroy_random(
         self,
         solution: _RouteSolution,
@@ -801,6 +814,7 @@ class EnergyAwareALNSStrategy(SchedulingStrategy):
         ("urgent", "deadline"),
         ("weight", "-weight"),
         ("energy_safe", "energy"),
+        ("regret_k", "regret"),
     ]
 
     def _repair_greedy(
@@ -831,6 +845,70 @@ class EnergyAwareALNSStrategy(SchedulingStrategy):
                 context.depot_node, t.destination_node
             ),
         )
+
+    def _repair_regret_k(
+        self, solution: _RouteSolution, removed_tasks: Set[int], context: StrategyContext
+    ) -> _RouteSolution:
+        """Regret-k 插入：优先插入"可选位置少/代价差异大"的任务。"""
+        k = max(2, self.regret_k)
+        new_sol = solution.copy()
+        tasks_to_insert = [
+            context.tasks[tid]
+            for tid in removed_tasks
+            if tid in context.tasks and context.tasks[tid].status == TaskStatus.PENDING
+        ]
+
+        while tasks_to_insert:
+            best_regret = -float("inf")
+            best_idx: Optional[int] = None
+            best_vid: Optional[int] = None
+            best_pos: Optional[int] = None
+
+            for idx, task in enumerate(tasks_to_insert):
+                insertions = self._find_task_insertions(new_sol, task, context)
+                if not insertions:
+                    continue
+
+                best_cost = insertions[0][0]
+                if len(insertions) == 1:
+                    regret = float("inf")
+                else:
+                    regret = sum(c - best_cost for c, _, _ in insertions[1:k])
+
+                if regret > best_regret:
+                    best_regret = regret
+                    best_idx = idx
+                    best_vid = insertions[0][1]
+                    best_pos = insertions[0][2]
+
+            if best_idx is None:
+                for task in tasks_to_insert:
+                    new_sol.unassigned_tasks.add(task.task_id)
+                break
+
+            task = tasks_to_insert.pop(best_idx)
+            new_sol.vehicle_routes[best_vid].insert(best_pos, task.task_id)
+
+        if self.enable_route_order_optimization:
+            new_sol = self._optimize_all_routes(new_sol, context)
+
+        return new_sol
+
+    def _find_task_insertions(
+        self,
+        solution: _RouteSolution,
+        task: Task,
+        context: StrategyContext,
+    ) -> List[Tuple[float, int, int]]:
+        """返回任务所有可行插入方案，按代价升序排列 [(cost, vehicle_id, position), ...]."""
+        result: List[Tuple[float, int, int]] = []
+        for vehicle_id, route in solution.vehicle_routes.items():
+            for pos in range(len(route) + 1):
+                cost = self._insertion_cost(vehicle_id, route, pos, task, context)
+                if cost is not None:
+                    result.append((cost, vehicle_id, pos))
+        result.sort(key=lambda x: x[0])
+        return result
 
     def _repair_generic(
         self,
@@ -909,18 +987,17 @@ class EnergyAwareALNSStrategy(SchedulingStrategy):
         destroy_names = [name for name, _ in destroy_ops]
         destroy_funcs = [func for _, func in destroy_ops]
 
-        repair_funcs = [
-            self._repair_greedy,
-            self._repair_urgent,
-            self._repair_weight,
-            self._repair_energy_safe,
-        ]
-        repair_names = list(_REPAIR_NAMES)
+        repair_ops = self._build_repair_ops()
+        repair_names = [name for name, _ in repair_ops]
+        repair_funcs = [func for _, func in repair_ops]
 
         n_destroy = len(destroy_funcs)
         n_repair = len(repair_funcs)
         self._destroy_weights = [1.0] * n_destroy
         self._repair_weights = [1.0] * n_repair
+        # regret_k 算子探索更充分，给更高初始权重
+        if n_repair >= 5:
+            self._repair_weights[4] = 3.0
 
         current = initial_solution.copy()
         initial_score = self._evaluate_solution(current, context)
