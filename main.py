@@ -16,6 +16,7 @@ from src.exporter import (
     write_timeline_json,
 )
 from src.strategies import (
+    EnergyAwareALNSStrategy,
     HyperSelectorStrategy,
     MaxWeightStrategy,
     NearestTaskStrategy,
@@ -35,7 +36,29 @@ def build_strategy_factories() -> dict[str, Callable[[], SchedulingStrategy]]:
         "time_first_bundle": TimeFirstBundleStrategy,
         "rl_charging": RLChargingStrategy,
         "hyper_selector": HyperSelectorStrategy,
+        "energy_aware_alns": EnergyAwareALNSStrategy,
     }
+
+
+def select_strategy_factories(
+    requested: str,
+    strategy_factories: dict[str, Callable[[], SchedulingStrategy]],
+) -> dict[str, Callable[[], SchedulingStrategy]]:
+    """按命令行参数选择策略，支持 all、单个策略或逗号分隔的策略列表。"""
+
+    if requested == "all":
+        return strategy_factories
+
+    selected_names = [name.strip() for name in requested.split(",") if name.strip()]
+    unknown_names = [name for name in selected_names if name not in strategy_factories]
+    if unknown_names:
+        valid_names = ", ".join(["all", *strategy_factories.keys()])
+        raise ValueError(
+            f"未知策略: {', '.join(unknown_names)}。可选值: {valid_names}；"
+            "也可以用逗号组合多个策略。"
+        )
+
+    return {name: strategy_factories[name] for name in selected_names}
 
 
 def build_scales(experiment_mode: str, long_train_multiplier: float):
@@ -157,8 +180,10 @@ def main() -> None:
         "--strategy",
         type=str,
         default="all",
-        choices=["all", "nearest_task", "max_weight", "time_first_bundle", "rl_charging", "hyper_selector"],
-        help="选择运行策略",
+        help=(
+            "选择运行策略：all / nearest_task / max_weight / time_first_bundle / "
+            "rl_charging / hyper_selector / energy_aware_alns；也可用逗号组合多个策略"
+        ),
     )
     parser.add_argument(
         "--save-timeline",
@@ -198,8 +223,7 @@ def main() -> None:
 
     if args.scale != "all":
         scales = [scale for scale in scales if scale.name == args.scale]
-    if args.strategy != "all":
-        strategy_factories = {args.strategy: strategy_factories[args.strategy]}
+    strategy_factories = select_strategy_factories(args.strategy, strategy_factories)
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
 

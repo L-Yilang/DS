@@ -1,6 +1,2 @@
 ﻿scale,strategy,total_score,completed_tasks,total_tasks,overdue_tasks,timeout_rate,total_distance,simulation_failed,failure_tick,failure_reason,completion_rate
-large,nearest_task,7681.86,334,361,103,0.2853,11082.8,False,,,0.9252
-large,max_weight,7320.46,335,361,97,0.2687,11193.5,False,,,0.928
-large,time_first_bundle,16192.43,294,308,8,0.026,8627.0,True,987,车辆#1载货时不能从充电计划切换到新任务,0.9545
-large,rl_charging,4679.16,83,94,0,0.0,2540.3,True,289,车辆#6载货时不能从充电计划切换到新任务,0.883
-large,hyper_selector,4581.46,81,93,0,0.0,2561.3,True,286,车辆#4载货时不能从充电计划切换到新任务,0.871
+large,energy_aware_alns,18698.54,361,361,23,0.0637,10527.5,False,,,1.0

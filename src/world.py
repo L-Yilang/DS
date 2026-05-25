@@ -979,7 +979,35 @@ class WorldManager:
         vehicle.state = VehicleState.LOADING
         vehicle.operation_timer = self.config.loading_duration
         vehicle.carried_weight += task.weight
+
+        # 将当前任务优先加入 loaded_task_ids，保证卸货顺序与 plan.task_id 一致。
+        if task.task_id not in vehicle.loaded_task_ids:
+            vehicle.loaded_task_ids.append(task.task_id)
+
+        # 批量装货：若下一个计划动作不是 load，则将 planned_task_ids 中剩余未装任务全部装车。
+        if not vehicle.planned_actions or vehicle.planned_actions[0] != "load":
+            self._batch_load_remaining_tasks(vehicle)
+
         self.events.append(f"车辆#{vehicle.vehicle_id}开始装货(任务#{task.task_id})")
+
+    def _batch_load_remaining_tasks(self, vehicle: Vehicle) -> None:
+        """将 planned_task_ids 中尚未装车的任务一次性装入车辆。"""
+        already_loaded: set = set(vehicle.loaded_task_ids)
+
+        for task_id in list(vehicle.planned_task_ids):
+            if task_id in already_loaded:
+                continue
+            next_task = self.tasks.get(task_id)
+            if next_task is None or next_task.status == TaskStatus.COMPLETED:
+                continue
+            if vehicle.carried_weight + next_task.weight > vehicle.load_capacity + 1e-6:
+                break
+            if next_task.status == TaskStatus.PENDING:
+                next_task.status = TaskStatus.ASSIGNED
+            next_task.assigned_vehicle_id = vehicle.vehicle_id
+            vehicle.carried_weight += next_task.weight
+            vehicle.loaded_task_ids.append(next_task.task_id)
+            already_loaded.add(next_task.task_id)
 
     def _finish_loading(self, vehicle: Vehicle, tick: int) -> None:
         """装货计时结束后，任务状态切换到 IN_PROGRESS。"""

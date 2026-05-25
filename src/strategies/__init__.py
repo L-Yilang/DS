@@ -1,4 +1,5 @@
 from .base import SchedulingStrategy
+from .energy_aware_alns import EnergyAwareALNSStrategy
 from .hyper_selector import HyperSelectorStrategy
 from .max_weight import MaxWeightStrategy
 from .nearest_task import NearestTaskStrategy
@@ -12,4 +13,5 @@ __all__ = [
 	"TimeFirstBundleStrategy",
 	"RLChargingStrategy",
 	"HyperSelectorStrategy",
+	"EnergyAwareALNSStrategy",
 ]
