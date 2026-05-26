@@ -163,6 +163,7 @@ class WorldManager:
 
         context = StrategyContext(
             tick=tick,
+            horizon=self.scale.horizon,
             depot_node=self.config.depot_node,
             config=self.config,
             graph=self.graph,

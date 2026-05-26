@@ -6,7 +6,7 @@ from typing import Dict, List
 
 from ..config import SimulationConfig
 from ..graph_utils import RoadGraph, ShortestPathOracle
-from ..models import ChargingStation, Task, Vehicle, VehicleState
+from ..models import ChargingStation, Task, TaskStatus, Vehicle, VehicleState
 
 
 @dataclass
@@ -32,6 +32,7 @@ class StrategyContext:
     """策略输入上下文：包含调度决策所需的完整世界信息。"""
 
     tick: int
+    horizon: int
     depot_node: int
     config: SimulationConfig
     graph: RoadGraph
@@ -107,6 +108,13 @@ class SchedulingStrategy(ABC):
 
         if vehicle.state not in (VehicleState.CHARGING, VehicleState.WAITING_CHARGE):
             return True
+
+        if vehicle.carried_weight > 1e-6 or vehicle.loaded_task_ids or vehicle.planned_task_ids:
+            return False
+        if vehicle.assigned_task_id is not None:
+            task = context.tasks.get(vehicle.assigned_task_id)
+            if task is not None and task.status != TaskStatus.COMPLETED:
+                return False
 
         battery = vehicle.battery
         cursor = vehicle.current_node

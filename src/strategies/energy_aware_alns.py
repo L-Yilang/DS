@@ -222,19 +222,7 @@ class EnergyAwareALNSStrategy(SchedulingStrategy):
 
     @staticmethod
     def _horizon_from_context(context: StrategyContext) -> int:
-        """尝试获取仿真 horizon。"""
-        scale_config = getattr(context, "config", None)
-        if scale_config is not None:
-            name = getattr(scale_config, "name", "")
-            # 穷举法：遍历 vehicles/tasks/stations 数量推断
-        if context.vehicles and context.tasks:
-            # 简单推断
-            n_vehicles = len(context.vehicles)
-            if n_vehicles <= 4:
-                return 500
-            elif n_vehicles <= 10:
-                return 800
-        return 1300
+        return context.horizon
 
     # ══════════════════════════════════════════════════════════════════
     #  Idle rebalance

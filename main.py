@@ -17,7 +17,7 @@ from src.exporter import (
 )
 from src.strategies import (
     EnergyAwareALNSStrategy,
-    HyperSelectorStrategy,
+    GeneticHyperHeuristicStrategy,
     MaxWeightStrategy,
     NearestTaskStrategy,
     RLChargingStrategy,
@@ -35,8 +35,8 @@ def build_strategy_factories() -> dict[str, Callable[[], SchedulingStrategy]]:
         "max_weight": MaxWeightStrategy,
         "time_first_bundle": TimeFirstBundleStrategy,
         "rl_charging": RLChargingStrategy,
-        "hyper_selector": HyperSelectorStrategy,
         "energy_aware_alns": EnergyAwareALNSStrategy,
+        "genetic_hyper": GeneticHyperHeuristicStrategy,
     }
 
 
@@ -182,7 +182,7 @@ def main() -> None:
         default="all",
         help=(
             "选择运行策略：all / nearest_task / max_weight / time_first_bundle / "
-            "rl_charging / hyper_selector / energy_aware_alns；也可用逗号组合多个策略"
+            "rl_charging / energy_aware_alns / genetic_hyper；也可用逗号组合多个策略"
         ),
     )
     parser.add_argument(
@@ -303,16 +303,6 @@ def main() -> None:
                 f"总里程={row['total_distance']}, 失败={row['simulation_failed']}"
             )
 
-    if "hyper_selector" in strategy_factories:
-        window_ticks = getattr(strategy_factories["hyper_selector"](), "window_ticks", None)
-        if isinstance(window_ticks, int) and window_ticks > 0:
-            print("hyper_selector 预计窗口数：")
-            for scale in scales:
-                expected_windows = math.ceil(scale.horizon / window_ticks)
-                print(
-                    f"- 规模={scale.name}, horizon={scale.horizon}, "
-                    f"window_ticks={window_ticks}, windows={expected_windows}"
-                )
 
     print(f"已输出: {summary_path}")
     if aggregated_rows:

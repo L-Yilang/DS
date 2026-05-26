@@ -1,2 +1,2 @@
 ﻿scale,strategy,total_score,completed_tasks,total_tasks,overdue_tasks,timeout_rate,total_distance,simulation_failed,failure_tick,failure_reason,completion_rate
-large,energy_aware_alns,18698.54,361,361,23,0.0637,10527.5,False,,,1.0
+large,time_first_bundle,18952.76,361,361,19,0.0526,10528.1,False,,,1.0

@@ -58,6 +58,19 @@ class RLChargingStrategy(SchedulingStrategy):
     _ACTION_KEEP = 0
     _ACTION_CHARGE = 1
 
+    def _vehicle_has_unfinished_work(self, vehicle: Vehicle, context: StrategyContext) -> bool:
+        """车上或任务链里还有未完成任务时，不允许策略重新分配新任务。"""
+
+        if vehicle.carried_weight > 1e-6:
+            return True
+        if vehicle.loaded_task_ids or vehicle.planned_task_ids:
+            return True
+        if vehicle.assigned_task_id is None:
+            return False
+
+        task = context.tasks.get(vehicle.assigned_task_id)
+        return task is not None and task.status != TaskStatus.COMPLETED
+
     def build_plans(self, context: StrategyContext) -> Dict[int, VehiclePlan]:
         plans: Dict[int, VehiclePlan] = {}
 
@@ -72,6 +85,7 @@ class RLChargingStrategy(SchedulingStrategy):
                 VehicleState.CHARGING,
                 VehicleState.WAITING_CHARGE,
             )
+            and not self._vehicle_has_unfinished_work(vehicle, context)
         ]
 
         # 阶段A：先处理非仓库车辆（回仓/低电充电），仓库空闲车先参与任务分配。
