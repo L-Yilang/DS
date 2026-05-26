@@ -22,10 +22,10 @@ from src.strategies import (
     GeneticHyperHeuristicStrategy,
     MaxWeightStrategy,
     NearestTaskStrategy,
-    RLChargingStrategy,
     SchedulingStrategy,
     TimeFirstBundleStrategy,
 )
+from src.strategies.mappo_strategy import MAPPOSTrategy
 from src.strategies.genetic_hyper import (
     Gene,
     crossover_gene,
@@ -48,17 +48,36 @@ TIME_FIRST_BUNDLE_TARGETS = {
 }
 
 
-def build_strategy_factories() -> dict[str, Callable[[], SchedulingStrategy]]:
-    """注册可用调度策略构造器。"""
+def build_strategy_factories(
+    *,
+    mappo_checkpoint: Path | None = None,
+    mappo_allow_untrained: bool = False,
+    requested_strategy: str = "all",
+) -> dict[str, Callable[[], SchedulingStrategy]]:
+    """Register available scheduling strategy factories."""
 
-    return {
+    factories: dict[str, Callable[[], SchedulingStrategy]] = {
         "nearest_task": NearestTaskStrategy,
         "max_weight": MaxWeightStrategy,
         "time_first_bundle": TimeFirstBundleStrategy,
-        "rl_charging": RLChargingStrategy,
         "energy_aware_alns": EnergyAwareALNSStrategy,
         "genetic_hyper": GeneticHyperHeuristicStrategy,
     }
+
+    requested_names = {name.strip() for name in requested_strategy.split(",") if name.strip()}
+    should_register_mappo = (
+        mappo_checkpoint is not None
+        or mappo_allow_untrained
+        or "mappo" in requested_names
+    )
+    if should_register_mappo:
+        factories["mappo"] = lambda: MAPPOSTrategy(
+            checkpoint_path=mappo_checkpoint,
+            deterministic=True,
+            allow_untrained=mappo_allow_untrained,
+        )
+
+    return factories
 
 
 def select_strategy_factories(
@@ -697,7 +716,7 @@ def main() -> None:
         default="all",
         help=(
             "选择运行策略：all / nearest_task / max_weight / time_first_bundle / "
-            "rl_charging / energy_aware_alns / genetic_hyper；也可用逗号组合多个策略"
+            "energy_aware_alns / genetic_hyper；也可用逗号组合多个策略"
         ),
     )
     parser.add_argument(
@@ -770,10 +789,25 @@ def main() -> None:
         default=None,
         help="加载已训练 genetic_hyper 模型目录并在固定 latest seed 上验证",
     )
+    parser.add_argument(
+        "--mappo-checkpoint",
+        type=Path,
+        default=None,
+        help="MAPPO inference checkpoint; without it MAPPO is excluded from --strategy all",
+    )
+    parser.add_argument(
+        "--mappo-allow-untrained",
+        action="store_true",
+        help="Allow an untrained MAPPO actor for smoke tests only",
+    )
     args = parser.parse_args()
 
     sim_config = SimulationConfig()
-    strategy_factories = build_strategy_factories()
+    strategy_factories = build_strategy_factories(
+        mappo_checkpoint=args.mappo_checkpoint,
+        mappo_allow_untrained=args.mappo_allow_untrained,
+        requested_strategy=args.strategy,
+    )
     scales = build_scales(args.experiment_mode, args.long_train_multiplier)
 
     if args.scale != "all":

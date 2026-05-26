@@ -69,6 +69,8 @@ class WorldManager:
         self.simulation_failed = False
         self.failure_reason: Optional[str] = None
         self.failure_tick: Optional[int] = None
+        self.current_tick = 0
+        self._distance_score_finalized = False
 
         self._init_stations()
         self._init_vehicles()
@@ -87,6 +89,7 @@ class WorldManager:
 
         # 主循环：逐 tick 推进。
         for tick in range(self.scale.horizon):
+            self.current_tick = tick
             self.events = []
 
             # 操作 1：更新世界（任务生成、超时、充电、车辆推进等）。
@@ -102,11 +105,58 @@ class WorldManager:
             if self.simulation_failed:
                 break
 
-        total_distance = sum(v.distance_travelled for v in self.vehicles.values())
-        distance_component = distance_penalty(total_distance, self.config.distance_penalty_factor)
-        self.distance_penalty_total += distance_component
-        self.score += distance_component
+        self.current_tick = min(self.scale.horizon, self.current_tick + 1)
+        return self.episode_result()
 
+    def build_context(self) -> StrategyContext:
+        tick = min(self.current_tick, max(0, self.scale.horizon - 1))
+        return StrategyContext(
+            tick=tick,
+            horizon=self.scale.horizon,
+            depot_node=self.config.depot_node,
+            config=self.config,
+            graph=self.graph,
+            oracle=self.oracle,
+            vehicles=self.vehicles,
+            tasks=self.tasks,
+            stations=self.stations,
+        )
+
+    def is_done(self) -> bool:
+        return self.simulation_failed or self.current_tick >= self.scale.horizon
+
+    def advance_to_next_decision(self) -> None:
+        if self.is_done():
+            return
+        self.events = []
+        self.world_manager_step(self.current_tick)
+        if self.simulation_failed:
+            self._save_timestep(self.current_tick)
+
+    def step_with_plans(self, plans: Dict[int, VehiclePlan]) -> None:
+        if self.is_done():
+            return
+        tick = self.current_tick
+        if not self.simulation_failed:
+            self.last_strategy_plans = {
+                vehicle_id: plan.to_dict()
+                for vehicle_id, plan in plans.items()
+            }
+            self._apply_strategy_plans(plans, tick)
+        self._save_timestep(tick)
+        self.current_tick += 1
+
+    def _finalize_distance_score(self) -> float:
+        total_distance = sum(v.distance_travelled for v in self.vehicles.values())
+        if not self._distance_score_finalized:
+            distance_component = distance_penalty(total_distance, self.config.distance_penalty_factor)
+            self.distance_penalty_total += distance_component
+            self.score += distance_component
+            self._distance_score_finalized = True
+        return total_distance
+
+    def episode_result(self) -> SimulationResult:
+        total_distance = self._finalize_distance_score()
         completed = sum(1 for task in self.tasks.values() if task.status == TaskStatus.COMPLETED)
         overdue = sum(1 for task in self.tasks.values() if task.overdue_penalized)
         timeout_rate = overdue / max(1, len(self.tasks))
