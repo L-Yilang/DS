@@ -1,0 +1,43 @@
+{
+  "strategy": "genetic_hyper",
+  "scale": "large",
+  "gene": {
+    "emergency_margin_ticks": 22.0,
+    "backlog_margin_gain": 7.059231999764681,
+    "bundle_wait_escape_ticks": 1.0,
+    "max_detour_ratio": 0.15,
+    "w_travel": 1.3725641214328745,
+    "w_queue": 1.7630451925398454,
+    "w_energy": 1.8207365726868037,
+    "cost_epsilon": 0.5475035178477752,
+    "mode1_bias": -0.07466680044415595,
+    "mode2_bias": -0.5099978022451096,
+    "mode3_bias": -0.12468743830317103,
+    "keep_idle_ratio": 0.23218904203962476,
+    "all_low_battery_ratio": 0.2316466378802793,
+    "depot_charge_ratio_no_pressure": 0.98,
+    "station_queue_scale": 1.2021447506040677
+  },
+  "metadata": {
+    "train_seeds": [
+      96256752,
+      7043615,
+      783279826,
+      1132104003,
+      19619219,
+      1504944247,
+      106597486,
+      1717994994
+    ],
+    "validation_seeds": [
+      2118333588,
+      362326816,
+      1167052183,
+      2012485100,
+      1287757272
+    ],
+    "train_fitness": 16451.9738,
+    "validation_total_score_mean": 17406.95,
+    "validation_failure_rate": 0.0
+  }
+}

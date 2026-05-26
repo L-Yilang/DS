@@ -1,4 +1,4 @@
-"""对比实验：TFB / ALNS / genetic_hyper / nearest_task / max_weight 在固定种子下的表现"""
+﻿"""对比实验：TFB / ALNS / genetic_hyper / nearest_task / max_weight 在固定种子下的表现"""
 from __future__ import annotations
 
 from dataclasses import replace
@@ -47,7 +47,15 @@ def main():
             rows = []
             for seed in seeds:
                 round_scale = replace(scale, seed=seed)
-                strategy = strategy_factory()
+                if strategy_name == "genetic_hyper":
+                    model_path = Path("outputs/genetic_hyper_eval/models") / f"{scale_name}_genetic_hyper_best.json"
+                    strategy = (
+                        GeneticHyperHeuristicStrategy(gene_path=model_path)
+                        if model_path.exists()
+                        else GeneticHyperHeuristicStrategy()
+                    )
+                else:
+                    strategy = strategy_factory()
                 world = WorldManager(scale=round_scale, config=sim_config, strategy=strategy)
                 result = world.run()
                 rows.append({
@@ -92,3 +100,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

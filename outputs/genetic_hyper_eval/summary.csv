@@ -1,0 +1,16 @@
+﻿scale,strategy,total_score,completed_tasks,total_tasks,overdue_tasks,timeout_rate,total_distance,simulation_failed,failure_tick,failure_reason,completion_rate,round,seed
+small,genetic_hyper,3305.83,52,52,0,0.0,659.3,False,,,1.0,1,1393869867
+small,genetic_hyper,3075.77,52,52,0,0.0,641.1,False,,,1.0,2,542157503
+small,genetic_hyper,3350.96,52,52,0,0.0,635.3,False,,,1.0,3,1044925344
+small,genetic_hyper,3244.26,52,52,0,0.0,630.6,False,,,1.0,4,92340001
+small,genetic_hyper,3355.21,52,52,0,0.0,653.5,False,,,1.0,5,177964726
+medium,genetic_hyper,9825.39,162,162,3,0.0185,3020.6,False,,,1.0,1,354787187
+medium,genetic_hyper,9335.77,161,162,5,0.0309,3353.4,False,,,0.9938,2,1866801784
+medium,genetic_hyper,10267.31,162,162,1,0.0062,3286.0,False,,,1.0,3,736577488
+medium,genetic_hyper,8980.25,161,162,7,0.0432,3451.9,False,,,0.9938,4,108402446
+medium,genetic_hyper,10265.57,162,162,0,0.0,2980.0,False,,,1.0,5,550665828
+large,genetic_hyper,17266.92,361,361,30,0.0831,11078.2,False,,,1.0,1,2118333588
+large,genetic_hyper,14133.17,361,361,42,0.1163,10831.7,False,,,1.0,2,362326816
+large,genetic_hyper,17358.77,361,361,31,0.0859,10636.8,False,,,1.0,3,1167052183
+large,genetic_hyper,19639.68,360,361,16,0.0443,10580.6,False,,,0.9972,4,2012485100
+large,genetic_hyper,18636.21,361,361,23,0.0637,10605.4,False,,,1.0,5,1287757272

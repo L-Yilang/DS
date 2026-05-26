@@ -1,0 +1,16 @@
+﻿scale,strategy,rounds,failure_rate,total_score_mean,total_score_std,completion_rate_mean,timeout_rate_mean,overdue_tasks_mean,total_distance_mean
+small,time_first_bundle,5,0.0,3192.086,108.1941,1.0,0.0038,0.2,631.94
+small,hyper_selector,5,0.0,3115.296,132.765,1.0,0.0154,0.8,629.4
+small,genetic_hyper,5,0.0,3266.406,103.3657,1.0,0.0,0.0,643.96
+small,max_weight,5,0.0,2917.386,351.8923,1.0,0.05,2.6,694.5
+small,nearest_task,5,0.0,3020.29,359.6762,1.0,0.0308,1.6,704.98
+medium,time_first_bundle,5,0.0,9511.034,540.8688,0.9975,0.0222,3.6,3174.78
+medium,hyper_selector,5,0.0,9497.852,521.1321,1.0,0.0222,3.6,3163.04
+medium,genetic_hyper,5,0.0,9734.858,510.306,0.9975,0.0198,3.2,3218.38
+medium,max_weight,5,0.0,6435.516,787.1652,0.9593,0.1568,25.4,3589.84
+medium,nearest_task,5,0.0,6983.924,522.2931,0.9593,0.1395,22.6,3548.22
+large,time_first_bundle,5,0.0,16601.03,2384.9391,0.9994,0.0865,31.2,10707.86
+large,hyper_selector,5,0.0,16162.828,2185.8187,0.9983,0.0953,34.4,10708.92
+large,genetic_hyper,5,0.0,17406.95,1856.6491,0.9994,0.0787,28.4,10746.54
+large,max_weight,5,0.0,7924.356,1720.6108,0.9385,0.2443,88.2,11158.68
+large,nearest_task,5,0.0,7612.506,1599.7431,0.933,0.2582,93.2,11067.52
