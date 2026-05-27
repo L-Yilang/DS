@@ -1,0 +1,4 @@
+﻿"scale","strategy","round","seed","total_score","completed_tasks","total_tasks","overdue_tasks","timeout_rate","total_distance","simulation_failed","failure_tick","failure_reason","completion_rate"
+"small","gurobi_score","1","1044925344","3415.01","52","52","0","0.0","657.4","False","","","1.0"
+"medium","gurobi_score","1","550665828","7714.09","124","162","38","0.2346","2065.8","False","","","0.7654"
+"large","gurobi_score","1","2012485100","8247.1","179","361","182","0.5042","4465.0","False","","","0.4958"

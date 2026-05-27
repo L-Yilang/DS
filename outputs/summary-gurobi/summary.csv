@@ -1,0 +1,4 @@
+﻿"scale","objective_mode","round","seed","status","runtime","objective_value","objective_bound","mip_gap","total_score","completed_tasks","total_tasks","overdue_tasks","completion_rate","timeout_rate","total_distance","completed_weight","generated_weight","max_slots"
+"small","score","1","1044925344","INTERRUPTED","18256.5483","3415.009067","3615.583332","0.058733","3415.01","52","52","0","1.0","0.0","657.4","695.47","695.47","26"
+"medium","score","1","550665828","INTERRUPTED","51529.1975","7714.085561","50664.293265","5.567764","7714.09","124","162","38","0.7654","0.2346","2065.8","1782.94","2317.17","29"
+"large","score","1","2012485100","INTERRUPTED","42965.2344","8247.104568","174861.376012","20.20276","8247.1","179","361","182","0.4958","0.5042","4465.0","2777.39","5648.28","33"
