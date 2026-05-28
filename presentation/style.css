@@ -1,16 +1,16 @@
-/* 梦幻薰衣草 · 玻璃拟态色系 */
+/* 奶茶米棕 · 玻璃拟态色系 */
 :root {
-    --bg-1: #FAF5FF;
-    --bg-2: #E9D5FF;
-    --bg-3: #FBCFE8;
-    --glass: rgba(255, 255, 255, 0.32);
-    --glass-border: rgba(255, 255, 255, 0.5);
-    --text-main: #2E1065;
-    --text-muted: #7E22CE;
-    --accent: #A855F7;
-    --accent-2: #EC4899;
-    --accent-soft: rgba(168, 85, 247, 0.15);
-    --accent-2-soft: rgba(236, 72, 153, 0.15);
+    --bg-1: #FFFBEB;
+    --bg-2: #FDE68A;
+    --bg-3: #FED7AA;
+    --glass: rgba(255, 255, 255, 0.36);
+    --glass-border: rgba(255, 255, 255, 0.54);
+    --text-main: #3F2E1E;
+    --text-muted: #8B6F47;
+    --accent: #D97706;
+    --accent-2: #EA580C;
+    --accent-soft: rgba(217, 119, 6, 0.15);
+    --accent-2-soft: rgba(234, 88, 12, 0.15);
 }
 
 /* 全局样式 */
@@ -45,7 +45,7 @@ body {
 .shape1 {
     width: 400px;
     height: 400px;
-    background: rgba(251, 207, 232, 0.55);
+    background: rgba(254, 215, 170, 0.55);
     top: -100px;
     left: -100px;
 }
@@ -53,7 +53,7 @@ body {
 .shape2 {
     width: 500px;
     height: 500px;
-    background: rgba(233, 213, 255, 0.55);
+    background: rgba(253, 230, 138, 0.55);
     bottom: -150px;
     right: -100px;
     animation-delay: -5s;
@@ -62,7 +62,7 @@ body {
 .shape3 {
     width: 300px;
     height: 300px;
-    background: rgba(250, 245, 255, 0.55);
+    background: rgba(255, 251, 235, 0.55);
     top: 40%;
     left: 50%;
     animation-delay: -10s;
@@ -107,7 +107,7 @@ body {
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid var(--glass-border);
     border-radius: 20px;
-    box-shadow: 0 8px 32px 0 rgba(168, 85, 247, 0.12);
+    box-shadow: 0 8px 32px 0 rgba(217, 119, 6, 0.12);
     padding: 40px;
     width: 90%;
     max-width: 1200px;
@@ -184,7 +184,7 @@ body {
 .nav-list li:hover {
     background: rgba(255, 255, 255, 0.45);
     transform: translateX(10px);
-    box-shadow: 0 4px 15px rgba(168, 85, 247, 0.1);
+    box-shadow: 0 4px 15px rgba(217, 119, 6, 0.1);
 }
 
 /* 内容页通用布局 */
@@ -263,7 +263,7 @@ body {
     padding: 20px 15px;
     background: var(--glass);
     border: 1px solid var(--glass-border);
-    box-shadow: 0 4px 15px rgba(168, 85, 247, 0.08);
+    box-shadow: 0 4px 15px rgba(217, 119, 6, 0.08);
     opacity: 0;
     transform: translateX(-20px);
 }
@@ -320,7 +320,7 @@ body {
 
 .highlight-step {
     background: linear-gradient(135deg, var(--accent-soft), var(--accent-2-soft));
-    border: 2px solid rgba(236, 72, 153, 0.4);
+    border: 2px solid rgba(234, 88, 12, 0.4);
 }
 .step-icon {
     font-size: 3rem;
@@ -361,7 +361,7 @@ body {
     background: var(--accent);
     color: white;
     border-color: var(--accent);
-    box-shadow: 0 4px 10px rgba(168, 85, 247, 0.3);
+    box-shadow: 0 4px 10px rgba(217, 119, 6, 0.3);
 }
 
 .algo-content {
@@ -601,7 +601,7 @@ body {
     border-radius: 15px;
     padding: 20px;
     width: 180px;
-    box-shadow: 0 8px 20px rgba(168, 85, 247, 0.12);
+    box-shadow: 0 8px 20px rgba(217, 119, 6, 0.12);
     opacity: 0;
     transform: translateX(-20px);
 }
@@ -674,7 +674,7 @@ body {
 
 /* MAPPO Anim */
 .mappo-canvas { flex-direction: column; gap: 30px; }
-.mappo-critic { background: var(--accent-2); color: white; padding: 15px 40px; border-radius: 30px; font-size: 1.3rem; font-weight: bold; box-shadow: 0 0 20px rgba(236, 72, 153, 0.35); }
+.mappo-critic { background: var(--accent-2); color: white; padding: 15px 40px; border-radius: 30px; font-size: 1.3rem; font-weight: bold; box-shadow: 0 0 20px rgba(234, 88, 12, 0.35); }
 .mappo-actors { display: flex; gap: 30px; }
 .m-actor { background: var(--accent); color: white; padding: 15px 25px; border-radius: 10px; font-weight: bold; font-size: 1.1rem; }
 .mappo-arrows { display: flex; gap: 80px; font-size: 1.2rem; font-weight: bold; color: var(--accent-2); }
@@ -720,12 +720,12 @@ body {
     font-size: 1.1rem;
     font-weight: bold;
     transition: transform 0.3s, box-shadow 0.3s;
-    box-shadow: 0 4px 15px rgba(168, 85, 247, 0.35);
+    box-shadow: 0 4px 15px rgba(217, 119, 6, 0.35);
 }
 
 .ui-link-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(236, 72, 153, 0.45);
+    box-shadow: 0 6px 20px rgba(234, 88, 12, 0.45);
     color: white;
 }
 

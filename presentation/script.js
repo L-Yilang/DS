@@ -107,22 +107,22 @@ function updateChart() {
     if (metric === 'score') {
         yAxisName = '总得分';
         seriesName = 'Score';
-        color = '#A855F7';
+        color = '#D97706';
     } else if (metric === 'completion') {
         yAxisName = '完成率 (%)';
         seriesName = 'Completion Rate';
-        color = '#EC4899';
+        color = '#EA580C';
     } else {
         yAxisName = '总里程';
         seriesName = 'Distance';
-        color = '#C084FC';
+        color = '#F59E0B';
     }
 
     const option = {
         title: {
             text: `${scale.toUpperCase()} 规模下的 ${yAxisName} 对比`,
             left: 'center',
-            textStyle: { color: '#2E1065' }
+            textStyle: { color: '#3F2E1E' }
         },
         tooltip: {
             trigger: 'axis',
@@ -137,13 +137,13 @@ function updateChart() {
         xAxis: {
             type: 'category',
             data: strategies,
-            axisLabel: { interval: 0, rotate: 15, color: '#7E22CE' }
+            axisLabel: { interval: 0, rotate: 15, color: '#8B6F47' }
         },
         yAxis: {
             type: 'value',
             name: yAxisName,
-            nameTextStyle: { color: '#7E22CE' },
-            axisLabel: { color: '#7E22CE' }
+            nameTextStyle: { color: '#8B6F47' },
+            axisLabel: { color: '#8B6F47' }
         },
         series: [
             {
@@ -153,14 +153,14 @@ function updateChart() {
                 itemStyle: {
                     color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
                         { offset: 0, color: color },
-                        { offset: 1, color: '#EC4899' }
+                        { offset: 1, color: '#EA580C' }
                     ]),
                     borderRadius: [5, 5, 0, 0]
                 },
                 label: {
                     show: true,
                     position: 'top',
-                    color: '#2E1065'
+                    color: '#3F2E1E'
                 },
                 animationDuration: 1500,
                 animationEasing: 'cubicOut'
