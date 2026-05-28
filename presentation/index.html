@@ -233,9 +233,8 @@
                         <p class="single-line-desc">假设上帝视角已知所有任务，建立混合整数线性规划模型，使用 Gurobi 求解全局最优解，作为评估启发式算法的理论上限标杆。</p>
                         <div class="anim-canvas gurobi-canvas">
                             <div class="gurobi-math">
-                                <div class="math-line l1">Max: ∑ (Score) - ∑ (Penalty)</div>
-                                <div class="math-line l2">s.t. ∑ x_ij = 1 (Flow Conservation)</div>
-                                <div class="math-line l3">e_j ≤ e_i - d_ij (Battery Limits)</div>
+                                <div class="math-line l1">在全知任务序列下，最大化项目总业务得分，综合权衡任务</div>
+                                <div class="math-line l2">完成收益、超时惩罚和行驶里程惩罚后寻找全局最优方案。</div>
                             </div>
                             <div class="gurobi-optimal">✨ Global Optimal Found ✨</div>
                         </div>

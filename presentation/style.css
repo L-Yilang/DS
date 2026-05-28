@@ -685,8 +685,8 @@ body {
 
 /* Gurobi Anim */
 .gurobi-canvas { flex-direction: column; gap: 20px; }
-.gurobi-math { font-family: 'Courier New', monospace; font-size: 1.3rem; color: var(--text-main); text-align: center; font-weight: bold; }
-.math-line { margin: 10px 0; opacity: 0; }
+.gurobi-math { font-size: 1.3rem; color: var(--text-main); text-align: center; font-weight: normal; line-height: 1.8; }
+.math-line { margin: 6px 0; opacity: 0; }
 .gurobi-optimal { font-size: 1.8rem; font-weight: bold; color: #27ae60; opacity: 0; transform: scale(0.8); margin-top: 10px; }
 .algo-panel.active .l1 { animation: fadeIn 0.5s forwards 0.5s; }
 .algo-panel.active .l2 { animation: fadeIn 0.5s forwards 1.0s; }
