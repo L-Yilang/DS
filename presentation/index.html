@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新能源物流车队调度系统</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+</head>
+<body>
+    <!-- 背景装饰 -->
+    <div class="bg-shape shape1"></div>
+    <div class="bg-shape shape2"></div>
+    <div class="bg-shape shape3"></div>
+
+    <div class="container">
+        <!-- 页面 0：首页 -->
+        <section class="slide active" id="slide-0">
+            <div class="glass-panel home-layout">
+                <div class="home-left">
+                    <h1 class="title">新能源物流车队<br><span class="highlight">协同调度系统</span></h1>
+                    <p class="subtitle">廖懿琅，赵馨柠，柯咏曦，梁与祚</p>
+                </div>
+                <div class="home-right">
+                    <ul class="nav-list">
+                        <li onclick="goToSlide(1)">1. 问题重述与核心假设</li>
+                        <li onclick="goToSlide(2)">2. 仿真设计</li>
+                        <li onclick="goToSlide(3)">3. 算法设计</li>
+                        <li onclick="goToSlide(4)">4. UI 动画展示</li>
+                        <li onclick="goToSlide(5)">5. 结果对比</li>
+                        <li onclick="goToSlide(6)">6. 代码可行展示</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- 页面 1：问题重述和核心假设 -->
+        <section class="slide" id="slide-1">
+            <div class="glass-panel content-layout">
+                <h2>1. 问题重述与核心假设</h2>
+                <div class="content-body">
+                    <div class="card stagger-in">
+                        <h3>🎯 问题重述</h3>
+                        <p>在城市路网中，管理一支新能源物流车队，响应动态出现的运输任务。目标是在满足车辆电量、载重限制以及充电站排队约束的前提下，规划最优的车辆调度与充电路径，以最大化任务完成收益并最小化超时与里程惩罚。</p>
+                    </div>
+                    <div class="card stagger-in" style="animation-delay: 0.2s;">
+                        <h3>💡 核心假设</h3>
+                        <ul>
+                            <li><strong>图结构路网：</strong> 城市道路抽象为无向图，节点为地点，边权为距离。</li>
+                            <li><strong>动态任务：</strong> 任务在仿真时间轴上随机生成，具有起点、终点、重量和截止时间。</li>
+                            <li><strong>电量与充电：</strong> 车辆耗电与行驶距离成正比。充电速度是固定的。</li>
+                            <li><strong>离散时间步：</strong> 仿真以 Tick 为单位推进，调度策略在每个 Tick 获取全局状态并下达指令。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 页面 2：仿真设计 (纯 HTML/CSS 动画流程图) -->
+        <section class="slide" id="slide-2">
+            <div class="glass-panel content-layout">
+                <h2>2. 仿真设计 (Tick 主循环)</h2>
+                <div class="content-body simulation-design">
+                    <div class="sim-text stagger-in">
+                        <p>仿真系统由 <strong>WorldManager</strong> 驱动，每个时间步 (Tick) 严格按照以下顺序更新物理世界，最后调用策略下达指令：</p>
+                    </div>
+                    
+                    <div class="sim-flowchart horizontal-flow">
+                        <div class="flow-step glass-card step-delay-1">
+                            <div class="step-icon">📦</div>
+                            <div class="step-content">
+                                <h4>1. 生成动态任务</h4>
+                            </div>
+                        </div>
+                        <div class="flow-arrow step-delay-2">➡</div>
+                        <div class="flow-step glass-card step-delay-3">
+                            <div class="step-icon">⚡</div>
+                            <div class="step-content">
+                                <h4>2. 更新分数与排队</h4>
+                            </div>
+                        </div>
+                        <div class="flow-arrow step-delay-4">➡</div>
+                        <div class="flow-step glass-card step-delay-5">
+                            <div class="step-icon">🚚</div>
+                            <div class="step-content">
+                                <h4>3. 更新车辆状态</h4>
+                            </div>
+                        </div>
+                        <div class="flow-arrow step-delay-6">➡</div>
+                        <div class="flow-step glass-card highlight-step step-delay-7">
+                            <div class="step-icon">🧠</div>
+                            <div class="step-content">
+                                <h4>4. 调度策略决策</h4>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 循环返回箭头 -->
+                    <div class="loop-arrow step-delay-8">
+                        <svg viewBox="0 0 600 80" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                            <path d="M 580 0 L 580 60 L 20 60 L 20 15" 
+                                  stroke="#3498db" stroke-width="10" fill="none" 
+                                  stroke-linecap="round" stroke-linejoin="round"
+                                  vector-effect="non-scaling-stroke"/>
+                            <polygon points="20,0 35,20 5,20" fill="#3498db"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 页面 3：算法设计 (纯 HTML/CSS 动态演示) -->
+        <section class="slide" id="slide-3">
+            <div class="glass-panel content-layout">
+                <h2>3. 算法设计</h2>
+                <div class="algo-tabs">
+                    <button class="tab-btn active" onclick="showAlgo('algo-1')">Nearest & Max Weight</button>
+                    <button class="tab-btn" onclick="showAlgo('algo-2')">Time First Bundle</button>
+                    <button class="tab-btn" onclick="showAlgo('algo-3')">ALNS</button>
+                    <button class="tab-btn" onclick="showAlgo('algo-4')">Genetic Hyper</button>
+                    <button class="tab-btn" onclick="showAlgo('algo-5')">MAPPO</button>
+                    <button class="tab-btn" onclick="showAlgo('algo-6')">Gurobi</button>
+                </div>
+                
+                <div class="algo-content">
+                    <!-- Nearest Task & Max Weight -->
+                    <div class="algo-panel active" id="algo-1">
+                        <h3>基础贪心策略：最近任务优先 & 最大重量优先</h3>
+                        <p class="single-line-desc">基于当前状态的局部最优解。Nearest Task 优先选择距离最近的任务；Max Weight 优先选择重量最大的任务。</p>
+                        <div class="static-boxes-container">
+                            <div class="image-box">
+                                <div class="nearest-task-anim">
+                                    <div class="nt-title">Nearest Task</div>
+                                    <div class="nt-content">
+                                        <div class="nt-vehicle">🚚</div>
+                                        <div class="nt-path">
+                                            <div class="dash-line"></div>
+                                        </div>
+                                        <div class="nt-target">
+                                            <div class="nt-pin">📍</div>
+                                            <div class="nt-box">📦</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="image-box">
+                                <div class="max-weight-anim">
+                                    <div class="mw-title">Max Weight</div>
+                                    <div class="mw-content">
+                                        <div class="mw-box">📦</div>
+                                        <div class="mw-arrow">⬆</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Time First Bundle -->
+                    <div class="algo-panel" id="algo-2">
+                        <h3>进阶策略：Time First Bundle</h3>
+                        <p class="single-line-desc">时间优先的双任务捆绑策略，TFB 将一个 tick 内的调度决策拆解为若干个顺序阶段，形成完整调度流水线。</p>
+                        <div class="tfb-flowchart">
+                            <div class="tfb-step step-delay-1">
+                                <div class="tfb-icon">🚚</div>
+                                <div class="tfb-text">车辆筛选</div>
+                            </div>
+                            <div class="tfb-arrow step-delay-2">➡</div>
+                            <div class="tfb-step step-delay-3">
+                                <div class="tfb-icon">⏱️</div>
+                                <div class="tfb-text">时间优先</div>
+                            </div>
+                            <div class="tfb-arrow step-delay-4">➡</div>
+                            <div class="tfb-step step-delay-5">
+                                <div class="tfb-icon">📦<span class="plus-sign">+</span>📦</div>
+                                <div class="tfb-text">非紧急任务拼单</div>
+                            </div>
+                            <div class="tfb-arrow step-delay-6">➡</div>
+                            <div class="tfb-step step-delay-7">
+                                <div class="tfb-icon">⚖️</div>
+                                <div class="tfb-text">空闲车再平衡</div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- ALNS -->
+                    <div class="algo-panel" id="algo-3">
+                        <h3>元启发式：自适应大邻域搜索 (ALNS)</h3>
+                        <p class="single-line-desc">通过多种 Destroy（破坏）和 Repair（修复）算子，结合模拟退火机制，不断迭代寻找更优的任务分配与路径序列。</p>
+                        <div class="anim-canvas alns-canvas">
+                            <div class="alns-graph">
+                                <div class="alns-node n1">A</div>
+                                <div class="alns-edge e1"></div>
+                                <div class="alns-node n2">B</div>
+                                <div class="alns-edge e2"></div>
+                                <div class="alns-node n3">C</div>
+                                <div class="alns-edge e3"></div>
+                                <div class="alns-node n4">D</div>
+                            </div>
+                            <div class="alns-status"></div>
+                        </div>
+                    </div>
+                    <!-- Genetic Hyper Heuristic -->
+                    <div class="algo-panel" id="algo-4">
+                        <h3>超启发式：遗传算法 (Genetic Hyper Heuristic)</h3>
+                        <p class="single-line-desc">使用遗传算法在顶层搜索 Time First Bundle 策略的 15 个超参数，以适应不同规模的地图与任务分布。</p>
+                        <div class="anim-canvas genetic-canvas">
+                            <div class="dna-container">
+                                <div class="gene-block">W_dist: 0.5</div>
+                                <div class="gene-block mutate-target">W_time: 1.2</div>
+                                <div class="gene-block">W_energy: 0.8</div>
+                            </div>
+                            <div class="genetic-status">🧬 基因突变 (Mutation) 🧬</div>
+                        </div>
+                    </div>
+                    <!-- MAPPO -->
+                    <div class="algo-panel" id="algo-5">
+                        <h3>多智能体强化学习：MAPPO</h3>
+                        <p class="single-line-desc">采用 CTDE（集中式训练，分布式执行）架构，将车辆视为智能体，学习在复杂环境下的调度动作（接单、回仓、充电）。</p>
+                        <div class="anim-canvas mappo-canvas">
+                            <div class="mappo-critic">🧠 Critic (全局价值评估 V)</div>
+                            <div class="mappo-arrows">
+                                <div class="m-arrow up">⬆ 状态</div>
+                                <div class="m-arrow down">⬇ 动作</div>
+                            </div>
+                            <div class="mappo-actors">
+                                <div class="m-actor">🚚 Actor 1</div>
+                                <div class="m-actor">🚚 Actor 2</div>
+                                <div class="m-actor">🚚 Actor 3</div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Gurobi -->
+                    <div class="algo-panel" id="algo-6">
+                        <h3>精确求解：Gurobi MILP</h3>
+                        <p class="single-line-desc">假设上帝视角已知所有任务，建立混合整数线性规划模型，使用 Gurobi 求解全局最优解，作为评估启发式算法的理论上限标杆。</p>
+                        <div class="anim-canvas gurobi-canvas">
+                            <div class="gurobi-math">
+                                <div class="math-line l1">Max: ∑ (Score) - ∑ (Penalty)</div>
+                                <div class="math-line l2">s.t. ∑ x_ij = 1 (Flow Conservation)</div>
+                                <div class="math-line l3">e_j ≤ e_i - d_ij (Battery Limits)</div>
+                            </div>
+                            <div class="gurobi-optimal">✨ Global Optimal Found ✨</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 页面 4：UI展示 -->
+        <section class="slide" id="slide-4">
+            <div class="glass-panel full-layout">
+                <div class="ui-header">
+                    <h2>4. UI 动画展示</h2>
+                    <a href="http://localhost:8000/replay_ui/index.html" target="_blank" class="ui-link-btn">🚀 点击在新标签页打开完整 UI 界面</a>
+                </div>
+                <div class="iframe-container stagger-in">
+                    <iframe src="../DS/replay_ui/index.html" frameborder="0"></iframe>
+                </div>
+            </div>
+        </section>
+
+        <!-- 页面 5：结果对比 -->
+        <section class="slide" id="slide-5">
+            <div class="glass-panel content-layout">
+                <h2>5. 结果对比</h2>
+                <div class="chart-controls">
+                    <select id="scaleSelect" onchange="updateChart()">
+                        <option value="small">Small 规模</option>
+                        <option value="medium">Medium 规模</option>
+                        <option value="large">Large 规模</option>
+                    </select>
+                    <select id="metricSelect" onchange="updateChart()">
+                        <option value="score">总得分 (Total Score)</option>
+                        <option value="completion">完成率 (%)</option>
+                        <option value="distance">总里程</option>
+                    </select>
+                </div>
+                <div id="resultChart" class="chart-container stagger-in"></div>
+            </div>
+        </section>
+
+        <!-- 页面 6：代码可行展示 -->
+        <section class="slide" id="slide-6">
+            <div class="glass-panel center-layout">
+                <h1 class="code-title pulse-anim">代码可行展示</h1>
+            </div>
+        </section>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

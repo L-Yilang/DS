@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import argparse
 import json
@@ -32,6 +32,7 @@ FIXED_SEEDS = {
 
 STRATEGY_ORDER = [
     "genetic_hyper",
+    "mappo",
     "energy_aware_alns",
     "time_first_bundle",
     "max_weight",
@@ -42,6 +43,7 @@ SUPPLEMENTARY_STRATEGY_ORDER = [*STRATEGY_ORDER, "mappo"]
 
 DISPLAY_NAMES = {
     "genetic_hyper": "genetic_hyper",
+    "mappo": "MAPPO",
     "energy_aware_alns": "ALNS",
     "time_first_bundle": "time_first_bundle",
     "max_weight": "max_weight",
@@ -50,108 +52,47 @@ DISPLAY_NAMES = {
 }
 
 MODEL_DIR = Path("outputs/genetic_hyper_eval/models")
+MAPPO_CHECKPOINT_DIR = Path("outputs/mappo/checkpoints")
 
 
-@dataclass(frozen=True)
-class SupplementaryExperiment:
-    name: str
-    title: str
-    scale_description: str
-    sim_description: str
-    analysis_hint: str
-    scale_overrides: dict
-    sim_overrides: dict
+def resolve_mappo_checkpoint(checkpoint_dir: Path, scale_name: str) -> Path | None:
+    """优先选择该规模专属的 best 权重，回退到全局 best 与 latest。"""
 
-
-SUPPLEMENTARY_EXPERIMENTS = [
-    SupplementaryExperiment(
-        name="standard_baseline",
-        title="普通中尺度基准实验",
-        scale_description="中尺度保持默认任务数 162、均匀释放时间和均匀目的地抽样。",
-        sim_description="仿真参数保持 run_final_outputs.py 的默认设置。",
-        analysis_hint="该实验作为补充实验的普通情况基准，用于衡量各扰动场景造成的性能变化。",
-        scale_overrides={},
-        sim_overrides={},
-    ),
-    SupplementaryExperiment(
-        name="extreme_load",
-        title="极大负载实验",
-        scale_description="中尺度任务数由 162 调整为 486，是原任务量的 3 倍。",
-        sim_description="其余仿真参数保持 run_final_outputs.py 的默认设置。",
-        analysis_hint="该实验检验算法在任务供给显著超过车辆服务能力时的吞吐能力和超时控制能力。",
-        scale_overrides={"task_count": 486},
-        sim_overrides={},
-    ),
-    SupplementaryExperiment(
-        name="peak_gaussian",
-        title="峰值实验",
-        scale_description="中尺度任务释放时间由均匀分布调整为截断高斯分布，均值比例为 0.4，标准差比例为 0.12。",
-        sim_description="其余仿真参数保持 run_final_outputs.py 的默认设置。",
-        analysis_hint="该实验检验任务在前中段集中到达时，策略对峰值压力和排队滞后的适应能力。",
-        scale_overrides={
-            "task_time_distribution": "gaussian",
-            "task_time_mean_ratio": 0.4,
-            "task_time_std_ratio": 0.12,
-        },
-        sim_overrides={},
-    ),
-    SupplementaryExperiment(
-        name="correlated_hotspot",
-        title="相关性测试",
-        scale_description=(
-            "中尺度任务释放时间使用截断高斯分布，均值比例为 0.4，标准差比例为 0.12；"
-            "同时选定热点节点 5、12、19、27、34，其目的地出现权重为其它节点的 5 倍。"
-        ),
-        sim_description="其余仿真参数保持 run_final_outputs.py 的默认设置。",
-        analysis_hint="该实验检验时间峰值与空间热点相关叠加时，策略是否会受局部目的地集中影响。",
-        scale_overrides={
-            "task_time_distribution": "gaussian",
-            "task_time_mean_ratio": 0.4,
-            "task_time_std_ratio": 0.12,
-            "hotspot_nodes": (5, 12, 19, 27, 34),
-            "hotspot_weight_multiplier": 5.0,
-        },
-        sim_overrides={},
-    ),
-    SupplementaryExperiment(
-        name="random_traffic",
-        title="随机堵车实验",
-        scale_description="中尺度规模保持默认任务与路网设置。",
-        sim_description="车辆每次进入下一条边时，以 20% 概率使该边行驶时间乘以 1.5，里程与耗电仍按原边长计算。",
-        analysis_hint="该实验检验策略在随机旅行时间扰动下的鲁棒性，重点观察完成率、超时率和失败率。",
-        scale_overrides={},
-        sim_overrides={"traffic_jam_probability": 0.2, "traffic_jam_multiplier": 1.5},
-    ),
-    SupplementaryExperiment(
-        name="energy_rate_0_5",
-        title="低耗电速率实验",
-        scale_description="中尺度规模保持默认任务与路网设置。",
-        sim_description="单位距离耗电速率由 1.0 调整为 0.5。",
-        analysis_hint="该实验用于观察电量约束放松后，策略是否减少充电绕行并提升任务完成表现。",
-        scale_overrides={},
-        sim_overrides={"energy_per_distance": 0.5},
-    ),
-    SupplementaryExperiment(
-        name="energy_rate_2_0",
-        title="快速耗电实验",
-        scale_description="中尺度规模保持默认任务与路网设置。",
-        sim_description="单位距离耗电速率由 1.0 调整为 2.0。",
-        analysis_hint="该实验用于观察电量约束收紧后，策略能否维持可行路线并避免电量不足失败。",
-        scale_overrides={},
-        sim_overrides={"energy_per_distance": 2.0},
-    ),
-]
+    candidates = [
+        checkpoint_dir / f"best_{scale_name}.pt",
+        checkpoint_dir / "best.pt",
+        checkpoint_dir / "latest.pt",
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return None
 
 
 def build_strategy_factory(
     scale_name: str,
     strategy_name: str,
     *,
-    mappo_checkpoint: Path | None = None,
+    mappo_checkpoint_dir: Path = MAPPO_CHECKPOINT_DIR,
 ) -> Callable[[], SchedulingStrategy]:
     if strategy_name == "genetic_hyper":
         model_path = MODEL_DIR / f"{scale_name}_genetic_hyper_best.json"
         return lambda: GeneticHyperHeuristicStrategy(gene_path=model_path)
+    if strategy_name == "mappo":
+        checkpoint_path = resolve_mappo_checkpoint(mappo_checkpoint_dir, scale_name)
+        if checkpoint_path is None:
+            raise FileNotFoundError(
+                f"未找到 MAPPO 权重，期望路径之一存在: "
+                f"{mappo_checkpoint_dir / f'best_{scale_name}.pt'}、"
+                f"{mappo_checkpoint_dir / 'best.pt'} 或 "
+                f"{mappo_checkpoint_dir / 'latest.pt'}。"
+                "请先运行 `python train_mappo.py` 训练得到权重，或使用 "
+                "`--skip-mappo` 跳过 MAPPO 验证。"
+            )
+        return lambda: MAPPOSTrategy(
+            checkpoint_path=checkpoint_path,
+            deterministic=True,
+        )
     if strategy_name == "energy_aware_alns":
         return EnergyAwareALNSStrategy
     if strategy_name == "time_first_bundle":
@@ -167,12 +108,17 @@ def build_strategy_factory(
     raise ValueError(f"Unknown strategy: {strategy_name}")
 
 
-def clean_outputs(output_dir: Path) -> None:
+def clean_outputs(output_dir: Path, *, mappo_checkpoint_dir: Path = MAPPO_CHECKPOINT_DIR) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     keep_models: dict[str, str] = {}
     if MODEL_DIR.exists():
         for model_path in MODEL_DIR.glob("*_genetic_hyper_best.json"):
             keep_models[model_path.name] = model_path.read_text(encoding="utf-8")
+
+    keep_mappo: dict[str, bytes] = {}
+    if mappo_checkpoint_dir.exists():
+        for ckpt_path in mappo_checkpoint_dir.glob("*.pt"):
+            keep_mappo[ckpt_path.name] = ckpt_path.read_bytes()
 
     resolved_output = output_dir.resolve()
     resolved_cwd = Path.cwd().resolve()
@@ -188,6 +134,11 @@ def clean_outputs(output_dir: Path) -> None:
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
     for name, content in keep_models.items():
         (MODEL_DIR / name).write_text(content, encoding="utf-8")
+
+    if keep_mappo:
+        mappo_checkpoint_dir.mkdir(parents=True, exist_ok=True)
+        for name, payload in keep_mappo.items():
+            (mappo_checkpoint_dir / name).write_bytes(payload)
 
 
 def build_summary_row(*, scale_name: str, strategy_name: str, result, round_index: int, seed: int) -> dict:
@@ -720,43 +671,22 @@ def main() -> None:
     parser.add_argument("--clean", action="store_true", help="清理 outputs 后重新生成最终结果")
     parser.add_argument("--output-dir", type=Path, default=Path("outputs"), help="结果输出目录")
     parser.add_argument(
-        "--supplementary-experiments",
+        "--mappo-checkpoint-dir",
+        type=Path,
+        default=MAPPO_CHECKPOINT_DIR,
+        help="MAPPO 权重目录（按规模优先选用 best_{scale}.pt，回退到 best.pt 或 latest.pt）",
+    )
+    parser.add_argument(
+        "--skip-mappo",
         action="store_true",
-        help="只运行中尺度补充实验，并为每个实验输出 Markdown 和文本分析",
-    )
-    parser.add_argument(
-        "--mappo-episodes",
-        type=int,
-        default=200,
-        help="补充实验中 MAPPO 每个场景的中尺度训练轮数",
-    )
-    parser.add_argument(
-        "--mappo-preset",
-        choices=["smoke", "default"],
-        default="default",
-        help="补充实验中 MAPPO 的训练预设",
-    )
-    parser.add_argument(
-        "--mappo-device",
-        default="cpu",
-        help="补充实验中 MAPPO 使用的设备",
-    )
-    parser.add_argument(
-        "--mappo-retrain",
-        action="store_true",
-        help="即使 checkpoint 已存在，也重新训练补充实验 MAPPO",
+        help="跳过 MAPPO 验证（在无可用权重或只想跑基线策略时使用）",
     )
     args = parser.parse_args()
 
     output_dir = args.output_dir
-    if args.supplementary_experiments:
-        if args.clean:
-            clean_outputs(output_dir)
-        run_supplementary_experiments(args)
-        return
-
+    mappo_checkpoint_dir = args.mappo_checkpoint_dir
     if args.clean:
-        clean_outputs(output_dir)
+        clean_outputs(output_dir, mappo_checkpoint_dir=mappo_checkpoint_dir)
     else:
         output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -765,7 +695,22 @@ def main() -> None:
 
     for scale in default_scales():
         for strategy_name in STRATEGY_ORDER:
-            strategy_factory = build_strategy_factory(scale.name, strategy_name)
+            if strategy_name == "mappo":
+                if args.skip_mappo:
+                    print(f"{scale.name} mappo: 已通过 --skip-mappo 跳过")
+                    continue
+                if resolve_mappo_checkpoint(mappo_checkpoint_dir, scale.name) is None:
+                    print(
+                        f"{scale.name} mappo: 未在 {mappo_checkpoint_dir} 找到可用权重，"
+                        "跳过 MAPPO 验证（可先运行 `python train_mappo.py` 训练得到权重）"
+                    )
+                    continue
+
+            strategy_factory = build_strategy_factory(
+                scale.name,
+                strategy_name,
+                mappo_checkpoint_dir=mappo_checkpoint_dir,
+            )
             for round_index, seed in enumerate(FIXED_SEEDS[scale.name], start=1):
                 round_scale = replace(scale, seed=seed)
                 strategy = strategy_factory()
