@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import argparse
 import json
@@ -18,6 +18,7 @@ from src.strategies import (
     SchedulingStrategy,
     TimeFirstBundleStrategy,
 )
+from src.strategies.mappo_strategy import MAPPOSTrategy
 from src.world import WorldManager
 
 
@@ -29,6 +30,7 @@ FIXED_SEEDS = {
 
 STRATEGY_ORDER = [
     "genetic_hyper",
+    "mappo",
     "energy_aware_alns",
     "time_first_bundle",
     "max_weight",
@@ -37,6 +39,7 @@ STRATEGY_ORDER = [
 
 DISPLAY_NAMES = {
     "genetic_hyper": "genetic_hyper",
+    "mappo": "MAPPO",
     "energy_aware_alns": "ALNS",
     "time_first_bundle": "time_first_bundle",
     "max_weight": "max_weight",
@@ -44,12 +47,47 @@ DISPLAY_NAMES = {
 }
 
 MODEL_DIR = Path("outputs/genetic_hyper_eval/models")
+MAPPO_CHECKPOINT_DIR = Path("outputs/mappo/checkpoints")
 
 
-def build_strategy_factory(scale_name: str, strategy_name: str) -> Callable[[], SchedulingStrategy]:
+def resolve_mappo_checkpoint(checkpoint_dir: Path, scale_name: str) -> Path | None:
+    """优先选择该规模专属的 best 权重，回退到全局 best 与 latest。"""
+
+    candidates = [
+        checkpoint_dir / f"best_{scale_name}.pt",
+        checkpoint_dir / "best.pt",
+        checkpoint_dir / "latest.pt",
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return None
+
+
+def build_strategy_factory(
+    scale_name: str,
+    strategy_name: str,
+    *,
+    mappo_checkpoint_dir: Path = MAPPO_CHECKPOINT_DIR,
+) -> Callable[[], SchedulingStrategy]:
     if strategy_name == "genetic_hyper":
         model_path = MODEL_DIR / f"{scale_name}_genetic_hyper_best.json"
         return lambda: GeneticHyperHeuristicStrategy(gene_path=model_path)
+    if strategy_name == "mappo":
+        checkpoint_path = resolve_mappo_checkpoint(mappo_checkpoint_dir, scale_name)
+        if checkpoint_path is None:
+            raise FileNotFoundError(
+                f"未找到 MAPPO 权重，期望路径之一存在: "
+                f"{mappo_checkpoint_dir / f'best_{scale_name}.pt'}、"
+                f"{mappo_checkpoint_dir / 'best.pt'} 或 "
+                f"{mappo_checkpoint_dir / 'latest.pt'}。"
+                "请先运行 `python train_mappo.py` 训练得到权重，或使用 "
+                "`--skip-mappo` 跳过 MAPPO 验证。"
+            )
+        return lambda: MAPPOSTrategy(
+            checkpoint_path=checkpoint_path,
+            deterministic=True,
+        )
     if strategy_name == "energy_aware_alns":
         return EnergyAwareALNSStrategy
     if strategy_name == "time_first_bundle":
@@ -61,12 +99,17 @@ def build_strategy_factory(scale_name: str, strategy_name: str) -> Callable[[], 
     raise ValueError(f"Unknown strategy: {strategy_name}")
 
 
-def clean_outputs(output_dir: Path) -> None:
+def clean_outputs(output_dir: Path, *, mappo_checkpoint_dir: Path = MAPPO_CHECKPOINT_DIR) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     keep_models: dict[str, str] = {}
     if MODEL_DIR.exists():
         for model_path in MODEL_DIR.glob("*_genetic_hyper_best.json"):
             keep_models[model_path.name] = model_path.read_text(encoding="utf-8")
+
+    keep_mappo: dict[str, bytes] = {}
+    if mappo_checkpoint_dir.exists():
+        for ckpt_path in mappo_checkpoint_dir.glob("*.pt"):
+            keep_mappo[ckpt_path.name] = ckpt_path.read_bytes()
 
     resolved_output = output_dir.resolve()
     resolved_cwd = Path.cwd().resolve()
@@ -82,6 +125,11 @@ def clean_outputs(output_dir: Path) -> None:
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
     for name, content in keep_models.items():
         (MODEL_DIR / name).write_text(content, encoding="utf-8")
+
+    if keep_mappo:
+        mappo_checkpoint_dir.mkdir(parents=True, exist_ok=True)
+        for name, payload in keep_mappo.items():
+            (mappo_checkpoint_dir / name).write_bytes(payload)
 
 
 def build_summary_row(*, scale_name: str, strategy_name: str, result, round_index: int, seed: int) -> dict:
@@ -201,11 +249,23 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Run final fixed-seed output experiments")
     parser.add_argument("--clean", action="store_true", help="清理 outputs 后重新生成最终结果")
     parser.add_argument("--output-dir", type=Path, default=Path("outputs"), help="结果输出目录")
+    parser.add_argument(
+        "--mappo-checkpoint-dir",
+        type=Path,
+        default=MAPPO_CHECKPOINT_DIR,
+        help="MAPPO 权重目录（按规模优先选用 best_{scale}.pt，回退到 best.pt 或 latest.pt）",
+    )
+    parser.add_argument(
+        "--skip-mappo",
+        action="store_true",
+        help="跳过 MAPPO 验证（在无可用权重或只想跑基线策略时使用）",
+    )
     args = parser.parse_args()
 
     output_dir = args.output_dir
+    mappo_checkpoint_dir = args.mappo_checkpoint_dir
     if args.clean:
-        clean_outputs(output_dir)
+        clean_outputs(output_dir, mappo_checkpoint_dir=mappo_checkpoint_dir)
     else:
         output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -214,7 +274,22 @@ def main() -> None:
 
     for scale in default_scales():
         for strategy_name in STRATEGY_ORDER:
-            strategy_factory = build_strategy_factory(scale.name, strategy_name)
+            if strategy_name == "mappo":
+                if args.skip_mappo:
+                    print(f"{scale.name} mappo: 已通过 --skip-mappo 跳过")
+                    continue
+                if resolve_mappo_checkpoint(mappo_checkpoint_dir, scale.name) is None:
+                    print(
+                        f"{scale.name} mappo: 未在 {mappo_checkpoint_dir} 找到可用权重，"
+                        "跳过 MAPPO 验证（可先运行 `python train_mappo.py` 训练得到权重）"
+                    )
+                    continue
+
+            strategy_factory = build_strategy_factory(
+                scale.name,
+                strategy_name,
+                mappo_checkpoint_dir=mappo_checkpoint_dir,
+            )
             for round_index, seed in enumerate(FIXED_SEEDS[scale.name], start=1):
                 round_scale = replace(scale, seed=seed)
                 strategy = strategy_factory()
