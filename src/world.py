@@ -380,6 +380,7 @@ class WorldManager:
         vehicle.planned_actions.clear()
         vehicle.next_node = None
         vehicle.edge_remaining = 0.0
+        vehicle.edge_time_multiplier = 1.0
         vehicle.route_final_action = None
         vehicle.visiting_station_id = None
 
@@ -541,7 +542,7 @@ class WorldManager:
 
         for _ in range(self.scale.task_count):
             release_time = self._sample_task_release_tick(spawn_cutoff_tick)
-            destination = self.rng.randrange(1, self.scale.node_count)
+            destination = self._sample_task_destination()
             weight = round(
                 self._sample_clipped_normal(weight_mean, weight_std, weight_lower, weight_upper),
                 2,
@@ -560,6 +561,22 @@ class WorldManager:
 
         for tick_tasks in self.precomputed_tasks_by_tick.values():
             tick_tasks.sort(key=lambda task: task.task_id)
+
+    def _sample_task_destination(self) -> int:
+        """按热点节点权重抽样任务目的地。"""
+
+        candidates = list(range(1, self.scale.node_count))
+        hotspots = {
+            node_id
+            for node_id in self.scale.hotspot_nodes
+            if 1 <= int(node_id) < self.scale.node_count
+        }
+        multiplier = max(1.0, float(self.scale.hotspot_weight_multiplier))
+        if not hotspots or multiplier <= 1.0:
+            return self.rng.choice(candidates)
+
+        weights = [multiplier if node_id in hotspots else 1.0 for node_id in candidates]
+        return self.rng.choices(candidates, weights=weights, k=1)[0]
 
     def _sample_task_release_tick(self, spawn_cutoff_tick: int) -> int:
         """按配置的时间分布抽样任务 release_time。"""
@@ -722,19 +739,22 @@ class WorldManager:
                 return
 
             vehicle.next_node = next_node
-            vehicle.edge_remaining = edge_distance
+            vehicle.edge_time_multiplier = self._sample_edge_time_multiplier()
+            vehicle.edge_remaining = edge_distance * vehicle.edge_time_multiplier
             vehicle.route.popleft()
 
         move_distance = min(vehicle.speed, vehicle.edge_remaining)
         vehicle.edge_remaining -= move_distance
-        vehicle.battery = max(0.0, vehicle.battery - move_distance * vehicle.energy_per_distance)
-        vehicle.distance_travelled += move_distance
+        actual_distance = move_distance / max(1e-6, vehicle.edge_time_multiplier)
+        vehicle.battery = max(0.0, vehicle.battery - actual_distance * vehicle.energy_per_distance)
+        vehicle.distance_travelled += actual_distance
 
         if vehicle.edge_remaining > 1e-6:
             return
 
         vehicle.current_node = int(vehicle.next_node)
         vehicle.next_node = None
+        vehicle.edge_time_multiplier = 1.0
 
         self._apply_due_arrival_actions(vehicle, tick)
         if self.simulation_failed:
@@ -742,6 +762,17 @@ class WorldManager:
 
         if vehicle.state == VehicleState.MOVING and not vehicle.route and vehicle.next_node is None:
             vehicle.state = VehicleState.IDLE
+
+    def _sample_edge_time_multiplier(self) -> float:
+        """按实验开关抽样随机堵车导致的边行驶时间倍率。"""
+
+        probability = max(0.0, min(1.0, self.config.traffic_jam_probability))
+        multiplier = max(1.0, self.config.traffic_jam_multiplier)
+        if probability <= 0.0 or multiplier <= 1.0:
+            return 1.0
+        if self.rng.random() < probability:
+            return multiplier
+        return 1.0
 
     def _apply_due_arrival_actions(self, vehicle: Vehicle, tick: int) -> None:
         """按 planned_arrivals/planned_actions 对齐关系，在到站时执行动作。"""
@@ -1160,6 +1191,7 @@ class WorldManager:
         # 充电完成后可由 world_manager_step 自动续跑后续任务链。
         vehicle.next_node = None
         vehicle.edge_remaining = 0.0
+        vehicle.edge_time_multiplier = 1.0
         vehicle.route_final_action = None
 
         if len(station.charging_vehicle_ids) < station.piles:
@@ -1233,6 +1265,7 @@ class WorldManager:
                     "planned_task_ids": list(vehicle.planned_task_ids),
                     "next_node": vehicle.next_node,
                     "edge_remaining": round(vehicle.edge_remaining, 2),
+                    "edge_time_multiplier": round(vehicle.edge_time_multiplier, 3),
                 }
                 for vehicle in self.vehicles.values()
             ],
@@ -1315,6 +1348,10 @@ class WorldManager:
                 "failure_penalty": round(self.failure_penalty_total, 2),
                 "total_score": round(self.score, 2),
             },
+            "traffic": {
+                "jam_probability": self.config.traffic_jam_probability,
+                "jam_multiplier": self.config.traffic_jam_multiplier,
+            },
         }
 
     def build_task_distribution(self) -> dict:
@@ -1330,6 +1367,7 @@ class WorldManager:
         release_times: List[int] = []
         weights: List[float] = []
         deadline_offsets: List[int] = []
+        destination_counts: Dict[int, int] = {}
 
         for task in tasks:
             if 0 <= task.release_time < spawn_cutoff_tick:
@@ -1337,6 +1375,7 @@ class WorldManager:
             release_times.append(task.release_time)
             weights.append(task.weight)
             deadline_offsets.append(task.deadline - task.release_time)
+            destination_counts[task.destination_node] = destination_counts.get(task.destination_node, 0) + 1
 
         weight_min = min(weights) if weights else 0.0
         weight_max = max(weights) if weights else 0.0
@@ -1370,6 +1409,11 @@ class WorldManager:
                 ],
             },
             "deadline_range": list(self.config.deadline_range),
+            "destination_distribution": {
+                "hotspot_nodes": list(self.scale.hotspot_nodes),
+                "hotspot_weight_multiplier": self.scale.hotspot_weight_multiplier,
+                "counts": dict(sorted(destination_counts.items())),
+            },
             "stats": {
                 "release_time_min": min(release_times) if release_times else None,
                 "release_time_max": max(release_times) if release_times else None,

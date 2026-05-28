@@ -72,6 +72,7 @@ class Vehicle:
     route_final_action: Optional[str] = None
     next_node: Optional[int] = None
     edge_remaining: float = 0.0
+    edge_time_multiplier: float = 1.0
     operation_timer: int = 0
     distance_travelled: float = 0.0
     visiting_station_id: Optional[int] = None

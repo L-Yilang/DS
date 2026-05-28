@@ -1,0 +1,2 @@
+stage,episode,seed,episode_reward,total_score,completed_tasks,overdue_tasks,timeout_rate,total_distance,simulation_failed,steps,actor_loss,critic_loss,entropy
+medium,1,20260403,-9839.0993,-9892.7,160,127,0.784,2942.8,False,800,-0.000373,103644.686094,0.198856

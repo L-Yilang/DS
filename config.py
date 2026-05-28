@@ -21,6 +21,8 @@ class ScaleConfig:
     task_time_mean_ratio: float  # 高斯分布均值在可释放时间窗中的相对位置
     task_time_std_ratio: float   # 高斯分布标准差在可释放时间窗中的相对比例
     task_weight_mean: float  # 任务重量均值
+    hotspot_nodes: Tuple[int, ...] = ()  # 热点目的地节点集合，空表示均匀抽样目的地
+    hotspot_weight_multiplier: float = 1.0  # 热点节点目的地抽样权重倍率
     depot_station_piles: Optional[int] = None  # 中央仓库充电桩数量（None 表示按车辆总数）
     non_depot_station_piles_range: Tuple[int, int] = (1, 3)  # 非仓库充电站桩数范围
 
@@ -47,6 +49,8 @@ class SimulationConfig:
     distance_penalty_factor: float = 0.06  # 距离惩罚系数
     queue_penalty_factor: float = 4.0  # 排队惩罚系数
     low_battery_ratio: float = 0.22  # 低电量阈值比例（触发充电策略）
+    traffic_jam_probability: float = 0.0  # 每条边出发时遭遇随机堵车的概率
+    traffic_jam_multiplier: float = 1.0  # 堵车时边行驶时间倍率
 
 
 def default_scales() -> List[ScaleConfig]:

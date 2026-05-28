@@ -5,9 +5,46 @@ from dataclasses import replace
 from pathlib import Path
 from statistics import mean
 
-from src.config import SimulationConfig, default_scales
+from src.config import ScaleConfig, SimulationConfig, default_scales
 from src.mappo.config import build_preset_config
 from src.mappo.trainer import MAPPOTrainer
+
+
+def apply_scenario(scale: ScaleConfig, sim_config: SimulationConfig, scenario: str):
+    """Apply the supplementary-experiment switches used by run_final_outputs.py."""
+
+    normalized = scenario.lower().strip()
+    if normalized == "standard":
+        return scale, sim_config
+    if normalized == "extreme_load":
+        return replace(scale, task_count=scale.task_count * 3), sim_config
+    if normalized == "peak_gaussian":
+        return replace(
+            scale,
+            task_time_distribution="gaussian",
+            task_time_mean_ratio=0.4,
+            task_time_std_ratio=0.12,
+        ), sim_config
+    if normalized == "correlated_hotspot":
+        return replace(
+            scale,
+            task_time_distribution="gaussian",
+            task_time_mean_ratio=0.4,
+            task_time_std_ratio=0.12,
+            hotspot_nodes=(5, 12, 19, 27, 34),
+            hotspot_weight_multiplier=5.0,
+        ), sim_config
+    if normalized == "random_traffic":
+        return scale, replace(
+            sim_config,
+            traffic_jam_probability=0.2,
+            traffic_jam_multiplier=1.5,
+        )
+    if normalized == "energy_rate_0_5":
+        return scale, replace(sim_config, energy_per_distance=0.5)
+    if normalized == "energy_rate_2_0":
+        return scale, replace(sim_config, energy_per_distance=2.0)
+    raise ValueError(f"Unknown scenario: {scenario}")
 
 
 def select_scales(scale_name: str):
@@ -63,6 +100,20 @@ def main() -> None:
         default=20260525,
         help="Training random seed.",
     )
+    parser.add_argument(
+        "--scenario",
+        choices=[
+            "standard",
+            "extreme_load",
+            "peak_gaussian",
+            "correlated_hotspot",
+            "random_traffic",
+            "energy_rate_0_5",
+            "energy_rate_2_0",
+        ],
+        default="standard",
+        help="Supplementary experiment scenario switches.",
+    )
     args = parser.parse_args()
 
     mappo_config = build_preset_config(args.preset, device=args.device)
@@ -84,10 +135,16 @@ def main() -> None:
         seed=args.seed,
     )
 
+    base_sim_config = SimulationConfig()
     selected_scales = select_scales(args.scale)
+    selected_scales = {
+        name: apply_scenario(scale, base_sim_config, args.scenario)[0]
+        for name, scale in selected_scales.items()
+    }
+    sim_config = apply_scenario(next(iter(selected_scales.values())), base_sim_config, args.scenario)[1]
     trainer = MAPPOTrainer(
         scales=selected_scales,
-        sim_config=SimulationConfig(),
+        sim_config=sim_config,
         mappo_config=mappo_config,
     )
     history = trainer.train(
@@ -96,7 +153,7 @@ def main() -> None:
     )
 
     print("MAPPO training finished.")
-    print(f"preset={args.preset}, scale={args.scale}, device={trainer.device}")
+    print(f"preset={args.preset}, scale={args.scale}, scenario={args.scenario}, device={trainer.device}")
     print(f"episodes={len(history)}")
     if history:
         scores = [float(row["total_score"]) for row in history]

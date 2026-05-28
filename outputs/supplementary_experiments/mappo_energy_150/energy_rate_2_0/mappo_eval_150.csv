@@ -1,0 +1,6 @@
+﻿experiment,round,seed,strategy,total_score,completed_tasks,total_tasks,overdue_tasks,timeout_rate,total_distance,simulation_failed,failure_tick,failure_reason,completion_rate
+energy_rate_2_0,1,354787187,mappo,7618.48,160,162,14,0.0864,2983.3,False,,,0.9877
+energy_rate_2_0,2,1866801784,mappo,5331.7,148,162,37,0.2284,3030.3,False,,,0.9136
+energy_rate_2_0,3,736577488,mappo,6584.81,155,162,23,0.142,3109.8,False,,,0.9568
+energy_rate_2_0,4,108402446,mappo,3292.02,145,162,56,0.3457,3072.3,False,,,0.8951
+energy_rate_2_0,5,550665828,mappo,7320.03,160,162,17,0.1049,3016.5,False,,,0.9877

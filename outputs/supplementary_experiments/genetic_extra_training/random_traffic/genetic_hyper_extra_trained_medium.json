@@ -1,0 +1,42 @@
+{
+  "strategy": "genetic_hyper",
+  "scale": "medium",
+  "gene": {
+    "emergency_margin_ticks": 10.0,
+    "backlog_margin_gain": 3.0,
+    "bundle_wait_escape_ticks": 2.0,
+    "max_detour_ratio": 0.25,
+    "w_travel": 1.0,
+    "w_queue": 1.2,
+    "w_energy": 0.8,
+    "cost_epsilon": 0.37614479309809584,
+    "mode1_bias": 0.0,
+    "mode2_bias": 0.0,
+    "mode3_bias": 0.0,
+    "keep_idle_ratio": 0.3,
+    "all_low_battery_ratio": 0.3514596189413898,
+    "depot_charge_ratio_no_pressure": 0.9,
+    "station_queue_scale": 1.0
+  },
+  "metadata": {
+    "experiment": "random_traffic",
+    "train_seeds": [
+      1524469453,
+      14087097
+    ],
+    "validation_seeds": [
+      354787187,
+      1866801784,
+      736577488,
+      108402446,
+      550665828
+    ],
+    "population_size": 8,
+    "generations": 5,
+    "train_rounds": 2,
+    "validation_total_score_mean": 8581.578,
+    "validation_completion_rate_mean": 0.9876,
+    "validation_timeout_rate_mean": 0.0543,
+    "validation_failure_rate": 0.0
+  }
+}

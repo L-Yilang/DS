@@ -1,0 +1,7 @@
+﻿scale,strategy,total_score_mean,completion_rate_mean,timeout_rate_mean,overdue_tasks_mean,total_distance_mean,failure_rate
+medium,genetic_hyper,6875.592,0.9568,0.1457,23.6,2987.34,0.0
+medium,ALNS,6991.858,0.963,0.1543,25.0,2939.14,0.0
+medium,time_first_bundle,6071.82,0.9395,0.184,29.8,2898.98,0.0
+medium,max_weight,4954.928,0.8191,0.2628,41.8,2740.26,0.4
+medium,nearest_task,5060.458,0.8469,0.2716,44.0,2890.74,0.0
+medium,MAPPO,6062.324,0.9469,0.1839,29.8,3043.02,0.0

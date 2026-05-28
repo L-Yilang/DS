@@ -1,0 +1,62 @@
+[
+  {
+    "scale": "medium",
+    "strategy": "genetic_hyper",
+    "total_score_mean": -375.318,
+    "completion_rate_mean": 0.4675,
+    "timeout_rate_mean": 0.5979,
+    "overdue_tasks_mean": 290.6,
+    "total_distance_mean": 3443.0,
+    "failure_rate": 0.0
+  },
+  {
+    "scale": "medium",
+    "strategy": "ALNS",
+    "total_score_mean": -12435.988,
+    "completion_rate_mean": 0.4733,
+    "timeout_rate_mean": 0.7662,
+    "overdue_tasks_mean": 372.4,
+    "total_distance_mean": 3547.82,
+    "failure_rate": 0.0
+  },
+  {
+    "scale": "medium",
+    "strategy": "time_first_bundle",
+    "total_score_mean": 653.426,
+    "completion_rate_mean": 0.4593,
+    "timeout_rate_mean": 0.5971,
+    "overdue_tasks_mean": 290.2,
+    "total_distance_mean": 3435.8,
+    "failure_rate": 0.0
+  },
+  {
+    "scale": "medium",
+    "strategy": "max_weight",
+    "total_score_mean": -1533.56,
+    "completion_rate_mean": 0.3568,
+    "timeout_rate_mean": 0.7119,
+    "overdue_tasks_mean": 346.0,
+    "total_distance_mean": 3708.48,
+    "failure_rate": 0.0
+  },
+  {
+    "scale": "medium",
+    "strategy": "nearest_task",
+    "total_score_mean": 3958.21,
+    "completion_rate_mean": 0.4741,
+    "timeout_rate_mean": 0.5889,
+    "overdue_tasks_mean": 286.2,
+    "total_distance_mean": 3397.64,
+    "failure_rate": 0.0
+  },
+  {
+    "scale": "medium",
+    "strategy": "MAPPO",
+    "total_score_mean": -8328.52,
+    "completion_rate_mean": 0.0066,
+    "timeout_rate_mean": 0.9757,
+    "overdue_tasks_mean": 474.2,
+    "total_distance_mean": 65.76,
+    "failure_rate": 0.0
+  }
+]

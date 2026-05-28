@@ -1,0 +1,6 @@
+﻿scale,strategy,round,seed,total_score,completed_tasks,total_tasks,overdue_tasks,timeout_rate,total_distance,simulation_failed,failure_tick,failure_reason,completion_rate
+medium,genetic_hyper_extra_trained,1,354787187,10307.87,162,162,0,0.0,2942.3,False,,,1.0
+medium,genetic_hyper_extra_trained,2,1866801784,9713.53,162,162,2,0.0123,3334.1,False,,,1.0
+medium,genetic_hyper_extra_trained,3,736577488,10354.98,162,162,0,0.0,3273.8,False,,,1.0
+medium,genetic_hyper_extra_trained,4,108402446,9946.8,162,162,0,0.0,3427.3,False,,,1.0
+medium,genetic_hyper_extra_trained,5,550665828,10312.94,162,162,0,0.0,2958.3,False,,,1.0
